@@ -1,0 +1,73 @@
+\newpage
+\section{Optimisation}
+\subsection{Compiler Optimisation}
+Aside from user-implemented optimisations, it is also possible to invoke the C compiler optimisations. There are various levels of optimisation: %TOOK FROM TI C Compiler v7 manual%
+\begin{itemize}
+    \item no optimisation
+    
+    \item --opt\_level = 0 (-O0)
+    \begin{itemize}
+        \item Performs control-flow-graph simplification
+        \item Allocates variables to registers
+        \item Performs loop rotation
+        \item Eliminates unused code
+        \item Simplifies expressions and statements
+        \item Expands calls to functions declared inline
+    \end{itemize}
+    
+    \item --opt\_level = 1 (-O1) \\
+    Performs all optimisations from lower levels plus:
+    \begin{itemize}
+        \item Performs local copy/constant propagation
+        \item Removes unused assignments
+        \item Eliminates local common expressions
+    \end{itemize}
+    
+    \item --opt\_level = 2 (-O2)
+    Performs all optimisations from lower levels plus:
+    \begin{itemize}
+        \item Performs software pipelining 
+        \item Performs loop optimizations
+        \item Eliminates global common subexpressions
+        \item Eliminates global unused assignments
+        \item Converts array references in loops to incremented pointer form
+        \item Performs loop unrolling
+    \end{itemize}
+    
+    \item --opt\_level = 3 (-O3)
+    Performs all optimisations from lower levels plus:
+    \begin{itemize}
+        \item Removes all functions that are never called
+        \item Simplifies functions with return values that are never used
+        \item Inlines calls to small functions
+        \item Reorders function declarations; the called functions attributes are known when the caller is
+optimized
+
+        \item Propagates arguments into function bodies when all calls pass the same value in the same
+argument position
+        \item Identifies file-level variable characteristics
+    \end{itemize}
+\end{itemize}
+
+Optimisation 1 is generally used within individual blocks of code (rather than across functions and files) as it has optimisations implemented locally for code size reduction. Therefore it is not necessary to test this level of optimisation on its own.
+
+Optimisation 3 does not allow the use of breakpoints and therefore the profiling clock measurement method cannot be used. Although a final executable would be compiled using this optimisation, for the purposes of comparing the performance of the different levels of optimisation, it is not necessary to test this level.
+
+\subsection{Pointers vs Array Indexing}
+
+%http://www.bores.com/courses/intro/program/7_array.htm%
+
+The most simple implementation of an FIR filter (as shown in Listing \ref{lst:naive}) accesses elements of the buffer using array indexing. This is a naive approach since a {\bf basic} compiler only knows the address of the first element of the array and so to read an array element the compiler has to find the address of the element first. For the listing below, each element access entails 3 operations: load the start address of the array; load the value of i; add the offset to the start address. The use of pointers can reduce the number of operations as the value of address we desire is contained within the variable and we only require to deference the pointer. {\bf Modern} compiler optimisations (such as the TI compiler opt\_level=2) converts array indexing to a pointer implementation. This should increase the performance of the code although it is good practise to explicitly use a pointer implementation rather than relying on compiler optimisations for three reasons:
+\begin{enumerate}
+    \item Optimisations are not always possible (e.g. in the case of interrupts)
+    \item Optimisations are heavily dependant on the compiler. This means that the code will not perform the same when ported from one compiler to another.
+    \item The reason we use a low-level language such as C is so that we can have control over what the processor is actually doing. Using pointers over array indexing gives a clearer description of what is happening closer to the machine code.
+\end{enumerate}
+
+\begin{lstlisting}[language=C, frame=single, caption=Convolution, label = lst:naive]
+y = 0;
+for(i = 0; i < N; i++){
+    y += b[i] * x[i]
+}
+return y;
+\end{lstlisting}
